@@ -3,10 +3,11 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, constr , validator
 import database as db
 import helpers # importamos la funcion del fichero helpers
+from fastapi.responses import RedirectResponse
 headers = {"content-type": "charset=utf-8"} # Para modificar los caracteres especiales
 
 class ModeloCliente(BaseModel):
-    dni: constr(min_length=3, max_length=3)
+    dni: constr(min_length=8, max_length=8)
     nombre: constr(min_length=3, max_length=30)
     apellido: constr(min_length=3, max_length=30)
 
@@ -21,6 +22,11 @@ app = FastAPI(
     title = " API de gestor de clientes",
     description= "Ofrece diferentes funciones para gestioanr los clientes."
 ) # Creando un app para que consuma la api
+
+
+@app.get("/", include_in_schema=False)
+async def root():
+    return RedirectResponse(url="/docs")
 
 
 @app.get("/clientes/", tags=["Clientes"]) # Con este decorador indicamos que la funcion es una ruta de la api, utlizamos get por que es una funcion de consulta
@@ -51,13 +57,10 @@ async def clientes_actualizar(datos:ModeloCliente):
     raise HTTPException(status_code=404, detail="Cliente no encontrado") # Sino muestra mensaje de error
 
 @app.delete("/clientes/borrar/{dni}/", tags=["Clientes"]) # Utilizamos delete para borrar registros
-async def clietnes_borrar(dni:str): # Recuperamos el dni como una cadena
+async def clientes_borrar(dni:str): # Recuperamos el dni como una cadena
     if db.Clientes.buscar(dni): # Buscamos el cliente a traves de su dni
         cliente = db.Clientes.borrar(dni=dni) # Recuperamos el valor a traves del borrado
         return JSONResponse (content= cliente.to_dict(),headers=headers) 
     raise HTTPException(status_code=404, detail="Cliente no encontrado") # Sino muestra mensaje de error
 
 
-
-# Tenemos que utilizar uvicorn para que corra la api ya que es el sevidor web y decirle que utilice la api
-# En este caso esta definida en la variable app, a traves del suguiente comando pipenv run uvicorn api:app 
